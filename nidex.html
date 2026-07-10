@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<base target="_top">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packing Material Stock Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Sarabun:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<style>
+  :root{
+    --navy-900:#0A1B3D;
+    --navy-700:#123A73;
+    --navy-500:#2F6FED;
+    --navy-glow:#5B9CFF;
+    --bg:#F2F5F9;
+    --card:#FFFFFF;
+    --ink:#152238;
+    --muted:#64748B;
+    --line:#E3E8EF;
+    --green:#12805C;
+    --green-bg:#E4F6EF;
+    --red:#B3261E;
+    --amber:#B7791F;
+    --shadow:0 1px 2px rgba(16,30,54,.06),0 8px 24px -12px rgba(16,30,54,.18);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Sarabun',-apple-system,'Segoe UI',sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:#C3CEDC;border-radius:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky;top:0;z-index:30;
+    background:
+      radial-gradient(1100px 160px at 15% -60%, rgba(91,156,255,.32), transparent 60%),
+      linear-gradient(120deg,#081A38 0%,#0E2F5E 38%,#1B4F8A 72%,#2563A8 100%);
+    color:#fff;
+    padding:18px 28px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    box-shadow:0 6px 22px -6px rgba(10,27,61,.55);
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:11px;
+    background:rgba(255,255,255,.14);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:18px;letter-spacing:.5px;
+    border:1px solid rgba(255,255,255,.25);
+  }
+  .brand h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.2px;}
+  .brand p{margin:2px 0 0;font-size:12.5px;color:rgba(255,255,255,.72);display:flex;align-items:center;gap:6px;}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#42E08C;box-shadow:0 0 0 0 rgba(66,224,140,.7);animation:pulse 2s infinite;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(66,224,140,.55);}
+    70%{box-shadow:0 0 0 8px rgba(66,224,140,0);}
+    100%{box-shadow:0 0 0 0 rgba(66,224,140,0);}
+  }
+  .header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .btn{
+    border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:13.5px;
+    padding:10px 16px;border-radius:9px;display:inline-flex;align-items:center;gap:8px;
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-light{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);}
+  .btn-light:hover{background:rgba(255,255,255,.24);}
+  .btn-accent{background:#fff;color:var(--navy-900);}
+  .btn-accent:hover{box-shadow:0 6px 16px -6px rgba(0,0,0,.35);}
+  .btn-ghost{background:transparent;color:var(--navy-700);border:1px solid var(--line);}
+  .btn-ghost:hover{background:#EDF1F6;}
+
+  main{max-width:1400px;margin:0 auto;padding:22px 26px 60px;}
+
+  /* ---------- Filter bar ---------- */
+  .filterbar{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px 18px;
+    display:flex;flex-wrap:wrap;gap:14px;align-items:end;
+    margin-bottom:20px;
+  }
+  .field{display:flex;flex-direction:column;gap:6px;min-width:150px;}
+  .field label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+  .field input[type=date], .field select{
+    font-family:inherit;font-size:13.5px;padding:9px 10px;border-radius:8px;
+    border:1px solid var(--line);background:#FBFCFE;color:var(--ink);min-width:150px;
+  }
+  .field input[type=date]:focus, .field select:focus{outline:2px solid var(--navy-500);outline-offset:1px;}
+  .filterbar .spacer{flex:1;}
+
+  /* ---------- KPI cards ---------- */
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+  .kpi{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;position:relative;overflow:hidden;
+  }
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--navy-500);}
+  .kpi.k2::before{background:#B7791F;}
+  .kpi.k3::before{background:var(--green);}
+  .kpi .kpi-label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
+  .kpi .kpi-value{font-size:22px;font-weight:700;color:var(--navy-900);line-height:1.3;word-break:break-word;}
+  .kpi.k3 .kpi-value{color:var(--green);font-size:28px;}
+  .kpi.k3 .kpi-value.breakdown{font-size:16px;line-height:1.5;}
+  .kpi .kpi-sub{font-size:12.5px;color:var(--muted);margin-top:6px;}
+
+  /* ---------- Charts ---------- */
+  .chart-row{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px;}
+  .panel{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px 6px;
+  }
+  .panel h3{margin:0 0 4px;font-size:14.5px;font-weight:700;color:var(--navy-900);}
+  .panel .panel-sub{font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .chart-box{width:100%;height:300px;}
+
+  /* ---------- Table ---------- */
+  .table-panel{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;
+  }
+  .table-head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  .table-head-row h3{margin:0;font-size:14.5px;font-weight:700;color:var(--navy-900);}
+  .table-count{font-size:12.5px;color:var(--muted);}
+  .table-scroll{max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:10px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    position:sticky;top:0;background:#F6F8FB;color:var(--navy-900);
+    text-align:left;padding:10px 12px;font-weight:700;border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody td{padding:9px 12px;border-bottom:1px solid #EEF1F5;white-space:nowrap;}
+  tbody tr:hover{background:#F7FAFD;}
+  .num{text-align:right;font-variant-numeric:tabular-nums;}
+  .remain-zero{color:#fff !important;}
+  .remain-pos{color:var(--green);font-weight:700;}
+  .badge-type{
+    display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;
+    background:#EAF1FA;color:var(--navy-700);
+  }
+  .empty-state{padding:34px;text-align:center;color:var(--muted);font-size:13.5px;}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:18px 0 6px;}
+
+  @media (max-width:980px){
+    .chart-row{grid-template-columns:1fr;}
+    .kpi-row{grid-template-columns:1fr;}
+  }
+
+  /* ---------- Print ---------- */
+  @media print{
+    .no-print{display:none !important;}
+    header{position:static;box-shadow:none;}
+    main{padding:0;max-width:100%;}
+    .table-scroll{max-height:none;overflow:visible;}
+    body{background:#fff;}
+    .panel,.kpi,.table-panel,.filterbar{box-shadow:none;border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">PM</div>
+    <div>
+      <h1>Packing Material Stock — Executive Dashboard</h1>
+      <p><span class="live-dot"></span> Real-time &nbsp;•&nbsp; อัปเดตล่าสุด <span id="lastUpdated">—</span></p>
+    </div>
+  </div>
+  <div class="header-actions no-print">
+    <button class="btn btn-light" id="refreshBtn">⟳ รีเฟรชตอนนี้</button>
+    <button class="btn btn-light" id="printBtn">🖨 Print Report</button>
+    <button class="btn btn-accent" id="exportBtn">⬇ Export CSV</button>
+  </div>
+</header>
+
+<main>
+
+  <section class="filterbar no-print">
+    <div class="field">
+      <label for="startDate">วันที่ผลิต (เริ่ม)</label>
+      <input type="date" id="startDate">
+    </div>
+    <div class="field">
+      <label for="endDate">วันที่ผลิต (ถึง)</label>
+      <input type="date" id="endDate">
+    </div>
+    <div class="field">
+      <label for="typeSelect">ประเภทสินค้า</label>
+      <select id="typeSelect"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="field">
+      <label for="productSelect">Product Name</label>
+      <select id="productSelect"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="field">
+      <label for="batchSelect">Batch No.</label>
+      <select id="batchSelect"><option value="">ทั้งหมด</option></select>
+    </div>
+    <div class="spacer"></div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="btn btn-ghost" id="resetBtn">↺ Reset</button>
+    </div>
+  </section>
+
+  <section class="kpi-row">
+    <div class="kpi k1">
+      <div class="kpi-label">ประเภท / Product Name ที่เลือก</div>
+      <div class="kpi-value" id="kpiType">ทั้งหมด</div>
+      <div class="kpi-sub" id="kpiTypeSub">แสดงข้อมูลทุกประเภท</div>
+    </div>
+    <div class="kpi k2">
+      <div class="kpi-label">Batch No.</div>
+      <div class="kpi-value" id="kpiBatch">—</div>
+      <div class="kpi-sub" id="kpiBatchSub">จำนวน batch ตามตัวกรองปัจจุบัน</div>
+    </div>
+    <div class="kpi k3">
+      <div class="kpi-label">คงเหลือ (ถัง) — เฉพาะประเภทที่เลือก</div>
+      <div class="kpi-value" id="kpiRemain">0</div>
+      <div class="kpi-sub" id="kpiRemainSub">ยอดคงเหลือของแต่ละประเภทจะไม่ถูกนำมารวมกัน</div>
+    </div>
+  </section>
+
+  <section class="chart-row">
+    <div class="panel">
+      <h3>เทรนปริมาณรับเข้า vs เบิกออก (ถัง)</h3>
+      <div class="panel-sub">แยกตามเดือนของ Mfg. Date ในช่วงที่เลือก</div>
+      <div class="chart-box" id="trendChart"></div>
+    </div>
+    <div class="panel">
+      <h3>สัดส่วนตามประเภทสินค้า</h3>
+      <div class="panel-sub">แยกตามจำนวน batch ของแต่ละประเภท</div>
+      <div class="chart-box" id="pieChart"></div>
+    </div>
+  </section>
+
+  <section class="table-panel">
+    <div class="table-head-row">
+      <h3>รายละเอียดข้อมูลตาม Batch</h3>
+      <div class="table-count"><span id="rowCount">0</span> แถว</div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ประเภทสินค้า</th>
+            <th>Product Name</th>
+            <th>Batch No.</th>
+            <th>Mfg. Date</th>
+            <th class="num">Qty In</th>
+            <th class="num">Qty Out</th>
+            <th class="num">Remain</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="no-print">Packing Material Stock Dashboard · ข้อมูลดึงจาก Google Sheets แบบเรียลไทม์</footer>
+</main>
+
+<script>
+google.charts.load('current', {packages:['corechart']});
+
+var RAW = null;         // full payload from server
+var FILTERED = [];       // current filtered batch list
+var AUTO_REFRESH_MS = 60000;
+
+function fmtNum(n){
+  if (n === null || n === undefined || isNaN(n)) return '-';
+  return Number(n).toLocaleString('en-US');
+}
+function fmtDate(iso){
+  if (!iso) return '-';
+  var d = new Date(iso + 'T00:00:00');
+  if (isNaN(d.getTime())) return '-';
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getDate() + '-' + months[d.getMonth()] + '-' + String(d.getFullYear()).slice(-2);
+}
+function fmtMonth(ym){
+  if (!ym || ym === 'ไม่ระบุ') return 'ไม่ระบุ';
+  var parts = ym.split('-');
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var mi = parseInt(parts[1],10) - 1;
+  return months[mi] + ' ' + parts[0].slice(-2);
+}
+
+function loadData(isAuto){
+  google.script.run.withSuccessHandler(function(data){
+    RAW = data;
+    populateFilterOptions();
+    applyFilters();
+    document.getElementById('lastUpdated').textContent =
+      new Date(data.generatedAt).toLocaleTimeString('th-TH');
+  }).withFailureHandler(function(err){
+    if (!isAuto) alert('โหลดข้อมูลไม่สำเร็จ: ' + err);
+  }).getDashboardData();
+}
+
+function populateFilterOptions(){
+  var typeSel = document.getElementById('typeSelect');
+  var productSel = document.getElementById('productSelect');
+  var batchSel = document.getElementById('batchSelect');
+
+  var curType = typeSel.value, curProduct = productSel.value, curBatch = batchSel.value;
+
+  var types = {};
+  RAW.batches.forEach(function(b){ types[b.type] = true; });
+
+  fillSelect(typeSel, Object.keys(types).sort(), curType, 'ทั้งหมด');
+  refreshProductOptions(curProduct);
+  refreshBatchOptions(curBatch);
+}
+
+function fillSelect(sel, values, keepValue, allLabel){
+  sel.innerHTML = '<option value="">' + allLabel + '</option>';
+  values.forEach(function(v){
+    var opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  if (values.indexOf(keepValue) !== -1) sel.value = keepValue;
+}
+
+function refreshProductOptions(keepValue){
+  var typeVal = document.getElementById('typeSelect').value;
+  var productSel = document.getElementById('productSelect');
+  var names = {};
+  RAW.batches.forEach(function(b){
+    if (typeVal && b.type !== typeVal) return;
+    if (b.productName) names[b.productName] = true;
+  });
+  fillSelect(productSel, Object.keys(names).sort(), keepValue, 'ทั้งหมด');
+}
+
+function refreshBatchOptions(keepValue){
+  var typeVal = document.getElementById('typeSelect').value;
+  var productVal = document.getElementById('productSelect').value;
+  var batchSel = document.getElementById('batchSelect');
+  var batches = {};
+  RAW.batches.forEach(function(b){
+    if (typeVal && b.type !== typeVal) return;
+    if (productVal && b.productName !== productVal) return;
+    batches[b.batchNo] = true;
+  });
+  fillSelect(batchSel, Object.keys(batches).sort(), keepValue, 'ทั้งหมด');
+}
+
+function applyFilters(){
+  if (!RAW) return;
+  var start = document.getElementById('startDate').value;
+  var end = document.getElementById('endDate').value;
+  var type = document.getElementById('typeSelect').value;
+  var product = document.getElementById('productSelect').value;
+  var batch = document.getElementById('batchSelect').value;
+
+  FILTERED = RAW.batches.filter(function(b){
+    if (start && (!b.mfgDate || b.mfgDate < start)) return false;
+    if (end && (!b.mfgDate || b.mfgDate > end)) return false;
+    if (type && b.type !== type) return false;
+    if (product && b.productName !== product) return false;
+    if (batch && b.batchNo !== batch) return false;
+    return true;
+  });
+
+  renderKpis(type, batch);
+  renderTable();
+  renderTrendChart();
+  renderPieChart();
+}
+
+function renderKpis(typeVal, batchVal){
+  var names = {};
+  var typesInScope = {};
+  FILTERED.forEach(function(b){
+    if (b.productName) names[b.productName] = true;
+    typesInScope[b.type] = true;
+  });
+  var nameList = Object.keys(names);
+  var typeList = Object.keys(typesInScope);
+
+  // ---- KPI 1: ประเภท / Product Name ----
+  // If a Batch No. is picked without an explicit Type, still show which
+  // ประเภท(s) that batch actually belongs to.
+  var displayType = typeVal || (batchVal && typeList.length ? typeList.join(', ') : 'ทั้งหมด');
+  document.getElementById('kpiType').textContent = displayType;
+
+  var subParts = [];
+  if (!typeVal && batchVal && typeList.length) {
+    subParts.push('ประเภท: ' + typeList.join(', '));
+  }
+  subParts.push(nameList.length ? 'Product Name: ' + nameList.join(', ') : 'ไม่พบข้อมูลตามตัวกรอง');
+  document.getElementById('kpiTypeSub').textContent = subParts.join(' · ');
+
+  document.getElementById('kpiBatch').textContent = batchVal || (FILTERED.length + ' batch');
+  document.getElementById('kpiBatchSub').textContent = batchVal
+    ? 'กำลังดูเฉพาะ batch นี้'
+    : 'จำนวน batch ตามตัวกรองปัจจุบัน';
+
+  // ---- KPI 3: คงเหลือ ----
+  function remainOf(t, batchNoFilter){
+    var s = 0;
+    RAW.batches.forEach(function(b){
+      if (b.type === t && (!batchNoFilter || b.batchNo === batchNoFilter)) s += b.remain;
+    });
+    return s;
+  }
+
+  var kpiRemainEl = document.getElementById('kpiRemain');
+  if (typeVal) {
+    // explicit type chosen -> single clean total for that type
+    kpiRemainEl.classList.remove('breakdown');
+    kpiRemainEl.textContent = fmtNum(remainOf(typeVal, batchVal));
+    document.getElementById('kpiRemainSub').textContent = 'รวมเฉพาะประเภท "' + typeVal + '" เท่านั้น';
+  } else if (batchVal && typeList.length) {
+    // batch chosen without a type -> never combine across sheets;
+    // show one total if the batch belongs to a single type, otherwise a
+    // per-type breakdown.
+    if (typeList.length === 1) {
+      kpiRemainEl.classList.remove('breakdown');
+      kpiRemainEl.textContent = fmtNum(remainOf(typeList[0], batchVal));
+      document.getElementById('kpiRemainSub').textContent = 'ประเภท "' + typeList[0] + '" · เฉพาะ batch นี้';
+    } else {
+      var parts = typeList.map(function(t){ return t + ': ' + fmtNum(remainOf(t, batchVal)) + ' ถัง'; });
+      kpiRemainEl.classList.add('breakdown');
+      kpiRemainEl.textContent = parts.join(' / ');
+      document.getElementById('kpiRemainSub').textContent = 'พบ Batch No. นี้มากกว่า 1 ประเภท แสดงแยกรายประเภท ไม่รวมกัน';
+    }
+  } else {
+    var remainSum = FILTERED.reduce(function(s,b){return s + (b.remain>0?b.remain:0);}, 0);
+    kpiRemainEl.classList.remove('breakdown');
+    kpiRemainEl.textContent = fmtNum(remainSum);
+    document.getElementById('kpiRemainSub').textContent = 'ยอดคงเหลือของแต่ละประเภทจะไม่ถูกนำมารวมกัน (เลือกประเภทเพื่อดูยอดต่อประเภท)';
+  }
+}
+
+function renderTable(){
+  var tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  var sorted = FILTERED.slice().sort(function(a,b){
+    if (a.type !== b.type) return a.type < b.type ? -1 : 1;
+    var da = a.mfgDate || '', db = b.mfgDate || '';
+    if (da !== db) return da < db ? -1 : 1;
+    var ra = a.recordDate || '', rb = b.recordDate || '';
+    return ra < rb ? -1 : (ra > rb ? 1 : 0);
+  });
+
+  if (sorted.length === 0){
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">ไม่พบข้อมูลตามตัวกรองที่เลือก</div></td></tr>';
+  }
+
+  sorted.forEach(function(b){
+    var tr = document.createElement('tr');
+    var remainClass = b.remain > 0 ? 'remain-pos' : 'remain-zero';
+    tr.innerHTML =
+      '<td><span class="badge-type">' + escapeHtml(b.type) + '</span></td>' +
+      '<td>' + escapeHtml(b.productName) + '</td>' +
+      '<td>' + escapeHtml(b.batchNo) + '</td>' +
+      '<td>' + fmtDate(b.mfgDate) + '</td>' +
+      '<td class="num">' + fmtNum(b.qtyIn) + '</td>' +
+      '<td class="num">' + fmtNum(b.qtyOut) + '</td>' +
+      '<td class="num ' + remainClass + '">' + fmtNum(b.remain) + '</td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('rowCount').textContent = sorted.length;
+}
+
+function escapeHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderTrendChart(){
+  var el = document.getElementById('trendChart');
+  if (!window.google || !google.visualization) return;
+
+  // Group by month of Mfg. Date, as specified — totals still come straight
+  // from each batch's real Qty In / Qty Out (100% matching the sheet),
+  // just bucketed by month for a clean, readable trend.
+  var byMonth = {};
+  FILTERED.forEach(function(b){
+    var key = b.mfgDate ? b.mfgDate.slice(0,7) : 'ไม่ระบุ';
+    if (!byMonth[key]) byMonth[key] = {inQty:0, outQty:0};
+    byMonth[key].inQty += b.qtyIn;
+    byMonth[key].outQty += b.qtyOut;
+  });
+
+  var keys = Object.keys(byMonth).sort();
+  var data = new google.visualization.DataTable();
+  data.addColumn('string','เดือนที่ผลิต (Mfg. Date)');
+  data.addColumn('number','รับเข้า');
+  data.addColumn('number','เบิกออก');
+  keys.forEach(function(k){
+    data.addRow([fmtMonth(k), byMonth[k].inQty, byMonth[k].outQty]);
+  });
+
+  if (keys.length === 0){
+    el.innerHTML = '<div class="empty-state">ไม่พบข้อมูลตามตัวกรองที่เลือก</div>';
+    return;
+  }
+
+  var chart = new google.visualization.ColumnChart(el);
+  chart.draw(data, {
+    colors:['#2A5DB0','#E0A62D'],
+    legend:{position:'top', textStyle:{fontName:'Sarabun', fontSize:12, color:'#152238'}},
+    chartArea:{left:52,top:34,width:'92%',height:'70%'},
+    hAxis:{textStyle:{fontName:'Sarabun', fontSize:11, color:'#64748B'}, slantedText:true, slantedTextAngle:45, baselineColor:'#E3E8EF'},
+    vAxis:{textStyle:{fontName:'Sarabun', fontSize:11, color:'#64748B'}, gridlines:{color:'#EEF1F5', count:6}, baseline:0, baselineColor:'#E3E8EF'},
+    fontName:'Sarabun',
+    backgroundColor:'transparent',
+    bar:{groupWidth:'52%'},
+    isStacked:false,
+    tooltip:{textStyle:{fontName:'Sarabun', fontSize:12}}
+  });
+}
+
+function renderPieChart(){
+  var el = document.getElementById('pieChart');
+  if (!window.google || !google.visualization) return;
+  var byType = {};
+  FILTERED.forEach(function(b){
+    byType[b.type] = (byType[b.type] || 0) + 1;
+  });
+  var data = new google.visualization.DataTable();
+  data.addColumn('string','ประเภท');
+  data.addColumn('number','จำนวน batch');
+  Object.keys(byType).sort().forEach(function(k){
+    data.addRow([k, byType[k]]);
+  });
+  var chart = new google.visualization.PieChart(el);
+  chart.draw(data, {
+    colors:['#2E5C8A','#3B8477','#C9982E','#8C4A4A','#6B5B8C','#4A5D6B'],
+    legend:{position:'right', textStyle:{fontName:'Sarabun', fontSize:12, color:'#152238'}, alignment:'center'},
+    chartArea:{left:8,top:12,width:'78%',height:'88%'},
+    pieHole:0.5,
+    pieSliceBorderColor:'#FFFFFF',
+    pieSliceText:'percentage',
+    pieSliceTextStyle:{fontName:'Sarabun', fontSize:11, color:'#FFFFFF'},
+    fontName:'Sarabun',
+    backgroundColor:'transparent',
+    tooltip:{textStyle:{fontName:'Sarabun', fontSize:12}}
+  });
+}
+
+function exportCsv(){
+  var headers = ['ประเภทสินค้า','Product Name','Batch No.','Mfg. Date','Qty In','Qty Out','Remain'];
+  var lines = [headers.join(',')];
+  var sorted = FILTERED.slice().sort(function(a,b){
+    if (a.type !== b.type) return a.type < b.type ? -1 : 1;
+    return (a.mfgDate||'') < (b.mfgDate||'') ? -1 : 1;
+  });
+  sorted.forEach(function(b){
+    var row = [b.type, b.productName, b.batchNo, fmtDate(b.mfgDate), b.qtyIn, b.qtyOut, b.remain];
+    lines.push(row.map(function(v){
+      var s = String(v == null ? '' : v);
+      if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1) s = '"' + s.replace(/"/g,'""') + '"';
+      return s;
+    }).join(','));
+  });
+  var csv = '\uFEFF' + lines.join('\r\n'); // BOM for Thai in Excel
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'packing-material-stock-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---- events ----
+document.getElementById('refreshBtn').addEventListener('click', function(){ loadData(false); });
+document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+document.getElementById('exportBtn').addEventListener('click', exportCsv);
+document.getElementById('resetBtn').addEventListener('click', function(){
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  document.getElementById('typeSelect').value = '';
+  document.getElementById('productSelect').value = '';
+  refreshProductOptions('');
+  refreshBatchOptions('');
+  applyFilters();
+});
+['startDate','endDate'].forEach(function(id){
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+document.getElementById('typeSelect').addEventListener('change', function(){
+  refreshProductOptions('');
+  refreshBatchOptions('');
+  applyFilters();
+});
+document.getElementById('productSelect').addEventListener('change', function(){
+  refreshBatchOptions('');
+  applyFilters();
+});
+document.getElementById('batchSelect').addEventListener('change', applyFilters);
+
+google.charts.setOnLoadCallback(function(){ loadData(false); });
+setInterval(function(){ loadData(true); }, AUTO_REFRESH_MS);
+</script>
+</body>
+</html>
